@@ -5,6 +5,7 @@
     android:id="@+id/add_vehicle_parent_scrollview"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:layout_margin="5dp"
     android:orientation="vertical"
     tools:context=".AddVehicles">
 

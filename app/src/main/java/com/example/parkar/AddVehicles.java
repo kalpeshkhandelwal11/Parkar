@@ -11,15 +11,21 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.CameraController;
+import androidx.camera.view.LifecycleCameraController;
 import androidx.camera.view.PreviewView;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
+import androidx.exifinterface.media.ExifInterface;
 import androidx.lifecycle.LifecycleOwner;
 
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Environment;
@@ -27,6 +33,7 @@ import android.provider.MediaStore;
 import android.text.InputFilter;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroupOverlay;
@@ -84,6 +91,7 @@ public class AddVehicles extends AppCompatActivity {
     PreviewView previewView;
     Button cameraShutter;
     ImageView vehicle_logo;
+    ImageView overlay;
 
     private ExecutorService cameraExecutor;
     private ImageCapture imageCapture;
@@ -139,8 +147,10 @@ public class AddVehicles extends AppCompatActivity {
         vehicle_logo = findViewById(R.id.add_vehicle_image);
         vehicleNumber.setFilters(new InputFilter[]{new InputFilter.AllCaps()});
         cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+
         previewView = findViewById(R.id.previewView);
         cameraShutter = findViewById(R.id.cameraShutter);
+        overlay  = findViewById(R.id.overlay_box);
         cameraShutter.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -231,8 +241,7 @@ public class AddVehicles extends AppCompatActivity {
     }
 
     void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
-            oldLayoutView= findViewById(R.id.overlay_box);
-
+        oldLayoutView= findViewById(R.id.overlay_box);
         previewView.setImplementationMode(PreviewView.ImplementationMode.COMPATIBLE);
         previewView.getOverlay().add(findViewById(R.id.overlay_box));
         previewView.setOnClickListener(new View.OnClickListener() {
@@ -252,7 +261,10 @@ public class AddVehicles extends AppCompatActivity {
 
         imageCapture = new ImageCapture.Builder()
                 .build();
+
         Camera camera = cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview,imageCapture);
+
+//        imageCapture.setTargetRotation(Surface.ROTATION_180);
     }
 
     private void startCamera() {
@@ -262,6 +274,7 @@ public class AddVehicles extends AppCompatActivity {
             public void run() {
                 try {
                     ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+
                     bindPreview(cameraProvider);
 
                 } catch (ExecutionException | InterruptedException e) {
@@ -270,6 +283,7 @@ public class AddVehicles extends AppCompatActivity {
             }
         }, ContextCompat.getMainExecutor(this));
     }
+
 
     public void onPreviewClick(View view) {
         if (isFullScreen) {
@@ -345,7 +359,6 @@ public class AddVehicles extends AppCompatActivity {
         ImageCapture.OutputFileOptions outputFileOptions =
                 new ImageCapture.OutputFileOptions.Builder(photoFile).build();
 
-
         imageCapture.takePicture(outputFileOptions, cameraExecutor, new ImageCapture.OnImageSavedCallback() {
             @Override
             public void onImageSaved(ImageCapture.OutputFileResults outputFileResults) {
@@ -353,11 +366,54 @@ public class AddVehicles extends AppCompatActivity {
                     @Override
                     public void run() {
                         Toast.makeText(AddVehicles.this, "Image captured!", Toast.LENGTH_SHORT).show();
+                        previewView.performClick();
+                        try {
+                            ExifInterface exifInterface = new ExifInterface(photoFile);
+                            int orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+
+                            int rotationDegrees = 0;
+                            switch (orientation) {
+                                case ExifInterface.ORIENTATION_ROTATE_90:
+                                    rotationDegrees = 90;
+                                    break;
+                                case ExifInterface.ORIENTATION_ROTATE_180:
+                                    rotationDegrees = 180;
+                                    break;
+                                case ExifInterface.ORIENTATION_ROTATE_270:
+                                    rotationDegrees = 270;
+                                    break;
+                            }
+
+                            // Load the captured image into a Bitmap
+                            Bitmap bitmap = BitmapFactory.decodeFile(photoFile.getAbsolutePath());
+
+                            if (rotationDegrees != 0) {
+                                // Create a matrix and set the rotation
+                                Matrix matrix = new Matrix();
+                                matrix.setRotate(rotationDegrees);
+
+                                // Apply the rotation to the bitmap
+                                Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+
+                                // Set the rotated bitmap to the ImageView
+                                overlay.setImageBitmap(rotatedBitmap);
+
+                                // Recycle the original bitmap to free up memory
+                                bitmap.recycle();
+                            } else {
+                                // No rotation needed, directly set the bitmap to the ImageView
+                                overlay.setImageBitmap(bitmap);
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+//                        Bitmap myBitmap = BitmapFactory.decodeFile(photoFile.getAbsolutePath());
+//
+//                        overlay.setImageBitmap(myBitmap);
                         Log.i("image","Image captured");
                     }
                 });
             }
-
             @Override
             public void onError(ImageCaptureException error) {
                 Log.e(TAG, "Error capturing image: " + error.getMessage());
