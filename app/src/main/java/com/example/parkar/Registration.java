@@ -51,7 +51,7 @@ public class Registration extends AppCompatActivity {
     DatePickerDialog datePickerDialog;
 
     EditText id;
-    TextInputEditText name , phone, email, address, society, dob, whatsapp, password;
+    TextInputEditText name, email, society, whatsapp, password;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,19 +63,19 @@ public class Registration extends AppCompatActivity {
         mdialog.setMessage("Registering Please wait");
         registerButton = findViewById(R.id.reg_register);
         loginButton = findViewById(R.id.reg_login);
-        RadioGroup female_male = findViewById(R.id.radiogroup1);
+//        RadioGroup female_male = findViewById(R.id.radiogroup1);
 
         name = findViewById(R.id.reg_name);
 
-        phone = findViewById(R.id.reg_phone);
+//        phone = findViewById(R.id.reg_phone);
 
         email = findViewById(R.id.reg_email);
 
-        address = findViewById(R.id.reg_address);
+//        address = findViewById(R.id.reg_address)/;
 
         society = findViewById(R.id.reg_societycode);
 
-        dob = findViewById(R.id.reg_dob);
+//        dob = findViewById(R.id.reg_dob);
 
         whatsapp = findViewById(R.id.reg_wano);
 
@@ -85,30 +85,30 @@ public class Registration extends AppCompatActivity {
         DatabaseReference myRef = database.getReference("user");
         mAuth = FirebaseAuth.getInstance();
 
-        dob.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                final Calendar c = Calendar.getInstance();
-                int mYear = c.get(Calendar.YEAR); // current year
-                int mMonth = c.get(Calendar.MONTH); // current month
-                int mDay = c.get(Calendar.DAY_OF_MONTH); // current day
-                // date picker dialog
-                Toast.makeText(Registration.this, "Im Here", Toast.LENGTH_SHORT).show();
-                datePickerDialog = new DatePickerDialog(Registration.this,
-                        new DatePickerDialog.OnDateSetListener() {
-
-                            @Override
-                            public void onDateSet(DatePicker view, int year,
-                                                  int monthOfYear, int dayOfMonth) {
-                                // set day of month , month and year value in the edit text
-                                dob.setText(dayOfMonth + "/"
-                                        + (monthOfYear + 1) + "/" + year);
-
-                            }
-                        }, mYear, mMonth, mDay);
-                datePickerDialog.show();
-            }
-        });
+//        dob.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                final Calendar c = Calendar.getInstance();
+//                int mYear = c.get(Calendar.YEAR); // current year
+//                int mMonth = c.get(Calendar.MONTH); // current month
+//                int mDay = c.get(Calendar.DAY_OF_MONTH); // current day
+//                // date picker dialog
+//                Toast.makeText(Registration.this, "Im Here", Toast.LENGTH_SHORT).show();
+//                datePickerDialog = new DatePickerDialog(Registration.this,
+//                        new DatePickerDialog.OnDateSetListener() {
+//
+//                            @Override
+//                            public void onDateSet(DatePicker view, int year,
+//                                                  int monthOfYear, int dayOfMonth) {
+//                                // set day of month , month and year value in the edit text
+//                                dob.setText(dayOfMonth + "/"
+//                                        + (monthOfYear + 1) + "/" + year);
+//
+//                            }
+//                        }, mYear, mMonth, mDay);
+//                datePickerDialog.show();
+//            }
+//        });
 
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -122,14 +122,14 @@ public class Registration extends AppCompatActivity {
             public void onClick(View view) {
 
                 u_name = name.getText().toString();
-                u_phone = phone.getText().toString();
+//                u_phone = phone.getText().toString();
                 u_email = email.getText().toString();
-                u_address = address.getText().toString();
+//                u_address = address.getText().toString();
                 u_society = society.getText().toString();
-                u_dob = dob.getText().toString();
-                int selectedId = female_male.getCheckedRadioButtonId();
-                RadioButton radioButton = (RadioButton) findViewById(selectedId);
-                female_male_txt = radioButton.getText().toString();
+//                u_dob = dob.getText().toString();
+//                int selectedId = female_male.getCheckedRadioButtonId();
+//                RadioButton radioButton = (RadioButton) findViewById(selectedId);
+//                female_male_txt = radioButton.getText().toString();
 
                 u_whatsapp = whatsapp.getText().toString();
                 u_password = password.getText().toString();
@@ -159,7 +159,7 @@ public class Registration extends AppCompatActivity {
                         //sending data to  node
 
                         //Toast.makeText(getApplicationContext(),uid,Toast.LENGTH_SHORT).show();
-                        user_registration_model data = new user_registration_model(id, u_name, u_phone, u_email, u_address, u_society, u_dob, female_male_txt, u_whatsapp);
+                        user_registration_model data = new user_registration_model(id, u_name, u_email, u_society, u_whatsapp);
                         myRef.child(id).setValue(data).addOnSuccessListener(new OnSuccessListener<Void>() {
                             @Override
                             public void onSuccess(Void aVoid) {

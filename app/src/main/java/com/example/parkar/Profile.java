@@ -139,7 +139,7 @@ public class Profile extends Fragment {
         update_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                user_registration_model model = new user_registration_model(auth.getCurrentUser().getUid(),profile_name.getText().toString(),profile_phone.getText().toString(),profile_email.getText().toString(),profile_address.getText().toString(),"",profile_dob.getText().toString(),profile_gender.getText().toString(),profile_whatsapp.getText().toString());
+                user_registration_model model = new user_registration_model(auth.getCurrentUser().getUid(),profile_phone.getText().toString(),profile_email.getText().toString(),profile_address.getText().toString(),"");
                 Map<String, Object> postValues = model.toMap();
                 mDatabase.updateChildren(postValues).addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
