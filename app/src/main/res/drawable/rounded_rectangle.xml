@@ -3,6 +3,6 @@
     <solid android:color="#33433D3D" />
 
     <!-- Semi-transparent gray color -->
-    <corners android:radius="50dp" />
+    <corners android:radius="25dp" />
     <!-- Rounded corners with a radius of 10dp -->
 </shape>

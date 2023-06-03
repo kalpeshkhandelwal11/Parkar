@@ -10,22 +10,19 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
+import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.Intent;
-import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.text.InputFilter;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
+import android.view.ViewGroupOverlay;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -49,6 +46,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
 
 public class AddVehicles extends AppCompatActivity {
     Button add;
@@ -187,18 +185,15 @@ public class AddVehicles extends AppCompatActivity {
     }
 
     void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
-
-
+            oldLayoutView= findViewById(R.id.overlay_box);
         PreviewView cameraView = findViewById(R.id.previewView);
         cameraView.setImplementationMode(PreviewView.ImplementationMode.COMPATIBLE);
-
-
-        cameraView.getOverlay().add(findViewById(R.id.overlay_test));
+        cameraView.getOverlay().add(findViewById(R.id.overlay_box));
         cameraView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                onPreviewClick(view);
-                onPreviewClick(findViewById(R.id.container_camera_preview));
+//                onPreviewClick(view);
+                onPreviewClick(findViewById(R.id.container_camera_preview_framelayout));
             }
         });
         Preview preview = new Preview.Builder()
@@ -215,20 +210,29 @@ public class AddVehicles extends AppCompatActivity {
     boolean isFullScreen = false;
     int originalWidth,originalHeight;
     Drawable oldBackground ;
+    float oldBorderRadius=50f;
+    ViewGroupOverlay oldLayoutViewOverlay;
+    View oldLayoutView;
     public void onPreviewClick(View previewView) {
         if (isFullScreen) {
             // Shrink the preview back to its original size
-
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
             ViewGroup.LayoutParams layoutParams = previewView.getLayoutParams();
             layoutParams.width = originalWidth;
             layoutParams.height = originalHeight;
             previewView.setLayoutParams(layoutParams);
             LinearLayout addVehicleLayout = findViewById(R.id.add_vehicle_layout);
             addVehicleLayout.setVisibility(View.VISIBLE);
-            findViewById(R.id.container_camera_preview).setBackground(oldBackground);
+            findViewById(R.id.container_camera_preview_framelayout).setBackground(oldBackground);
             isFullScreen = false;
+            CardView cardView = (CardView)findViewById(R.id.cardview_camera_preview);
+            cardView.setRadius(oldBorderRadius);
+            findViewById(R.id.overlay_label).setVisibility(View.VISIBLE);
+            ((PreviewView)findViewById(R.id.previewView)).getOverlay().add(oldLayoutView);
         } else {
             // Expand the preview to full screen
+            findViewById(R.id.overlay_label).setVisibility(View.GONE);
             LinearLayout addVehicleLayout = findViewById(R.id.add_vehicle_layout);
             addVehicleLayout.setVisibility(View.GONE);
             ViewGroup.LayoutParams layoutParams = previewView.getLayoutParams();
@@ -237,12 +241,17 @@ public class AddVehicles extends AppCompatActivity {
             layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
             layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
             previewView.setLayoutParams(layoutParams);
-
             getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                     WindowManager.LayoutParams.FLAG_FULLSCREEN);
             isFullScreen = true;
-            oldBackground=findViewById(R.id.container_camera_preview).getBackground();
-            findViewById(R.id.container_camera_preview).setBackgroundColor(0x00000000);
+            oldBackground=findViewById(R.id.container_camera_preview_framelayout).getBackground();
+            findViewById(R.id.container_camera_preview_framelayout).setBackgroundColor(0x00000000);
+            CardView cardView = (CardView)findViewById(R.id.cardview_camera_preview);
+            oldBorderRadius=cardView.getRadius();
+            cardView.setRadius(0f);
+            oldLayoutViewOverlay = ((PreviewView)findViewById(R.id.previewView)).getOverlay();
+            ((PreviewView)findViewById(R.id.previewView)).setBackgroundColor(0x00000000);
+            ((PreviewView)findViewById(R.id.previewView)).getOverlay().clear();
 
         }
     }
