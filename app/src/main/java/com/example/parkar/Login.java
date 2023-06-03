@@ -9,13 +9,11 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -34,7 +32,7 @@ public class Login extends AppCompatActivity {
         mdialog.setTitle("Login");
         mdialog.setMessage("Logging in Please wait");
         Button login = findViewById(R.id.login_login);
-        TextInputEditText email = findViewById(R.id.login_id);
+        TextInputEditText email = findViewById(R.id.login_email);
         TextInputEditText password = findViewById(R.id.login_pass);
 
         Button register = findViewById(R.id.login_register);
