@@ -101,6 +101,7 @@ public class Login extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         if (mAuth.getCurrentUser() != null) {
             startActivity(new Intent(getApplicationContext(), User_dashboard.class));
+            finish();
         }
         login.setOnClickListener(new View.OnClickListener() {
             @Override

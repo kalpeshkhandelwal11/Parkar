@@ -6,7 +6,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
-
+    <uses-permission android:name="android.permission.CAMERA"/>
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -48,7 +48,9 @@
         <activity android:name=".ViewParking" />
         <activity android:name=".add_parking" />
         <activity android:name=".AddVehicles" />
-        <activity android:name=".Vehicles">
+        <activity android:name=".Vehicles"
+            android:exported="true"
+            >
 
             <!-- <intent-filter android:autoVerify="true"> -->
             <!-- <action android:name="android.intent.action.VIEW" /> -->
@@ -72,6 +74,7 @@
             android:screenOrientation="portrait" />
         <activity android:name=".ForgotPassword" />
         <activity android:name=".Login"
+            android:exported="true"
             android:windowSoftInputMode="adjustResize"
             >
         <intent-filter>
