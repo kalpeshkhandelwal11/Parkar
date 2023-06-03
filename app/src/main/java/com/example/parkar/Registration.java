@@ -40,11 +40,10 @@ public class Registration extends AppCompatActivity {
     Button registerButton, loginButton;
     String u_id;
     String u_name;
-    String u_phone;
+
     String u_email;
-    String u_address;
+
     String u_society;
-    String u_dob;
     String u_whatsapp;
     String u_password;
     String female_male_txt;
@@ -159,7 +158,7 @@ public class Registration extends AppCompatActivity {
                         //sending data to  node
 
                         //Toast.makeText(getApplicationContext(),uid,Toast.LENGTH_SHORT).show();
-                        user_registration_model data = new user_registration_model(id, u_name, u_email, u_society, u_whatsapp);
+                        user_registration_model data = new user_registration_model(id, u_name,u_whatsapp, u_email, u_society);
                         myRef.child(id).setValue(data).addOnSuccessListener(new OnSuccessListener<Void>() {
                             @Override
                             public void onSuccess(Void aVoid) {

@@ -31,14 +31,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.83"
-        app:srcCompat="@drawable/add" />
+        app:srcCompat="@drawable/car_no" />
 
     <TextView
         android:id="@+id/add_vehicle_action_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
-        android:text="Add Vehicle"
+        android:text="Your Vehicles"
         app:layout_constraintBottom_toBottomOf="@+id/add_vehicle_fab"
         app:layout_constraintEnd_toStartOf="@+id/add_vehicle_fab"
         app:layout_constraintTop_toTopOf="@+id/add_vehicle_fab" />

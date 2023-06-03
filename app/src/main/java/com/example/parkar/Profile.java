@@ -106,13 +106,13 @@ public class Profile extends Fragment {
 
                 if(snapshot.exists()){
                     profile_name.setText(snapshot.child("u_name").getValue().toString());
-                    profile_dob.setText(snapshot.child("u_dob").getValue().toString());
-                    profile_gender.setText(snapshot.child("u_gender").getValue().toString());
-                    profile_phone.setText(snapshot.child("u_phone").getValue().toString());
-                    profile_whatsapp.setText(snapshot.child("u_whatsapp").getValue().toString());
+//                    profile_dob.setText(snapshot.child("u_dob").getValue().toString());
+//                    profile_gender.setText(snapshot.child("u_gender").getValue().toString());
+//                    profile_phone.setText(snapshot.child("u_phone").getValue().toString());
+                    profile_whatsapp.setText(snapshot.child("u_phone").getValue().toString());
 
                     profile_email.setText(snapshot.child("u_email").getValue().toString());
-                    profile_address.setText(snapshot.child("u_address").getValue().toString());
+//                    profile_address.setText(snapshot.child("u_address").getValue().toString());
                 }
 
             }
@@ -139,7 +139,7 @@ public class Profile extends Fragment {
         update_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                user_registration_model model = new user_registration_model(auth.getCurrentUser().getUid(),profile_phone.getText().toString(),profile_email.getText().toString(),profile_address.getText().toString(),"");
+                user_registration_model model = new user_registration_model(auth.getCurrentUser().getUid(),profile_name.getText().toString(),profile_whatsapp.getText().toString(),profile_email.getText().toString(),"");
                 Map<String, Object> postValues = model.toMap();
                 mDatabase.updateChildren(postValues).addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
