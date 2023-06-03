@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -34,8 +35,8 @@ public class Login extends AppCompatActivity {
         Button login = findViewById(R.id.login_login);
         TextInputEditText email = findViewById(R.id.login_email);
         TextInputEditText password = findViewById(R.id.login_pass);
-
-        Button register = findViewById(R.id.login_register);
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+                Button register = findViewById(R.id.login_register);
         Button forgot = findViewById(R.id.login_forgot);
         mAuth = FirebaseAuth.getInstance();
         if(mAuth.getCurrentUser()!=null){

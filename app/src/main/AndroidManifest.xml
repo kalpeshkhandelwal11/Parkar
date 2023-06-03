@@ -71,7 +71,9 @@
             android:name=".Scanner"
             android:screenOrientation="portrait" />
         <activity android:name=".ForgotPassword" />
-        <activity android:name=".Login">
+        <activity android:name=".Login"
+            android:windowSoftInputMode="adjustResize"
+            >
         <intent-filter>
             <action android:name="android.intent.action.MAIN" />
 
