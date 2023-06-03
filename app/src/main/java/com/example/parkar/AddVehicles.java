@@ -17,14 +17,19 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.InputFilter;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -44,10 +49,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
 public class AddVehicles extends AppCompatActivity {
     Button add;
     private FirebaseAuth mAuth;
-    TextView  vehicleType, vehicleNumber , vehicleModel , vehicle_NickName , VehicleCode;
+    TextView vehicleType, vehicleNumber, vehicleModel, vehicle_NickName, VehicleCode;
     String vehicle_model;
     String vehicle_nickname;
     String vehicle_number;
@@ -56,8 +62,7 @@ public class AddVehicles extends AppCompatActivity {
     String vehicle_societycode;
     String vehicle_type;
 
-    public static boolean isValidCarNo(String NUMBERPLATE)
-    {
+    public static boolean isValidCarNo(String NUMBERPLATE) {
 
         // Regex to check valid Indian Vehicle Number Plate
         String regex
@@ -81,8 +86,10 @@ public class AddVehicles extends AppCompatActivity {
         // matched the ReGex
         return m.matches();
     }
+
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     ImageView vehicle_logo;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -93,8 +100,8 @@ public class AddVehicles extends AppCompatActivity {
         vehicleModel = findViewById(R.id.addv_model);
         vehicle_NickName = findViewById(R.id.addv_nickname);
         VehicleCode = findViewById(R.id.addv_securitycode);
-        vehicle_logo  = findViewById(R.id.add_vehicle_image);
-        vehicleNumber.setFilters(new InputFilter[] {new InputFilter.AllCaps()});
+        vehicle_logo = findViewById(R.id.add_vehicle_image);
+        vehicleNumber.setFilters(new InputFilter[]{new InputFilter.AllCaps()});
         cameraProviderFuture = ProcessCameraProvider.getInstance(this);
         cameraProviderFuture.addListener(() -> {
             try {
@@ -108,9 +115,9 @@ public class AddVehicles extends AppCompatActivity {
         vehicleNumber.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View view, boolean b) {
-                if(isValidCarNo(vehicleNumber.getText().toString())){
+                if (isValidCarNo(vehicleNumber.getText().toString())) {
                     add.setEnabled(true);
-                }else{
+                } else {
                     add.setEnabled(false);
                 }
             }
@@ -124,7 +131,6 @@ public class AddVehicles extends AppCompatActivity {
 //            notificationManager.createNotificationChannel(new NotificationChannel(channelId,
 //                    channelName, NotificationManager.IMPORTANCE_LOW));
 //        }
-
 
 
         ActionBar actionBar = getSupportActionBar();
@@ -147,7 +153,7 @@ public class AddVehicles extends AppCompatActivity {
                 vehicle_owner = mAuth.getCurrentUser().getDisplayName().toString();
                 vehicle_owner_id = mAuth.getCurrentUser().getUid().toString();
 
-                add_vehicle_model data = new add_vehicle_model(vehicle_model ,vehicle_nickname,vehicle_number,vehicle_owner,vehicle_owner_id,vehicle_societycode,vehicle_type);
+                add_vehicle_model data = new add_vehicle_model(vehicle_model, vehicle_nickname, vehicle_number, vehicle_owner, vehicle_owner_id, vehicle_societycode, vehicle_type);
                 myRef.child(vehicle_number).setValue(data).addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void unused) {
@@ -158,7 +164,7 @@ public class AddVehicles extends AppCompatActivity {
                                     public void onComplete(@NonNull Task<Void> task) {
                                         String msg = "Subscribed";
                                         if (!task.isSuccessful()) {
-                                            msg ="Not Subscribbed";
+                                            msg = "Not Subscribbed";
                                         }
                                         Log.d(TAG, msg);
 //                                        Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
@@ -179,15 +185,22 @@ public class AddVehicles extends AppCompatActivity {
             }
         });
     }
+
     void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
 
 
-
-        PreviewView cameraView  = findViewById(R.id.previewView);
+        PreviewView cameraView = findViewById(R.id.previewView);
         cameraView.setImplementationMode(PreviewView.ImplementationMode.COMPATIBLE);
 
 
         cameraView.getOverlay().add(findViewById(R.id.overlay_test));
+        cameraView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onPreviewClick(view);
+                onPreviewClick(findViewById(R.id.container_camera_preview));
+            }
+        });
         Preview preview = new Preview.Builder()
                 .build();
 
@@ -195,8 +208,45 @@ public class AddVehicles extends AppCompatActivity {
         CameraSelector cameraSelector = new CameraSelector.Builder()
                 .requireLensFacing(CameraSelector.LENS_FACING_BACK)
                 .build();
-        Camera camera = cameraProvider.bindToLifecycle((LifecycleOwner)this, cameraSelector, preview);
+
+        Camera camera = cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview);
     }
+
+    boolean isFullScreen = false;
+    int originalWidth,originalHeight;
+    Drawable oldBackground ;
+    public void onPreviewClick(View previewView) {
+        if (isFullScreen) {
+            // Shrink the preview back to its original size
+
+            ViewGroup.LayoutParams layoutParams = previewView.getLayoutParams();
+            layoutParams.width = originalWidth;
+            layoutParams.height = originalHeight;
+            previewView.setLayoutParams(layoutParams);
+            LinearLayout addVehicleLayout = findViewById(R.id.add_vehicle_layout);
+            addVehicleLayout.setVisibility(View.VISIBLE);
+            findViewById(R.id.container_camera_preview).setBackground(oldBackground);
+            isFullScreen = false;
+        } else {
+            // Expand the preview to full screen
+            LinearLayout addVehicleLayout = findViewById(R.id.add_vehicle_layout);
+            addVehicleLayout.setVisibility(View.GONE);
+            ViewGroup.LayoutParams layoutParams = previewView.getLayoutParams();
+            originalWidth = layoutParams.width;
+            originalHeight = layoutParams.height;
+            layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            previewView.setLayoutParams(layoutParams);
+
+            getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            isFullScreen = true;
+            oldBackground=findViewById(R.id.container_camera_preview).getBackground();
+            findViewById(R.id.container_camera_preview).setBackgroundColor(0x00000000);
+
+        }
+    }
+
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
