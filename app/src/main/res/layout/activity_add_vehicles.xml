@@ -62,6 +62,7 @@
             android:id="@+id/overlay_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:visibility="gone"
             android:layout_gravity="center"
             android:background="@color/fui_transparent"
             android:textColor="#FFFFFF"
@@ -76,6 +77,34 @@
             android:layout_height="match_parent"
             android:background="@drawable/rounded_rectangle"
             android:scaleType="fitXY" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/cameraShutter"
+            android:visibility="gone"
+            android:layout_width="92dp"
+            android:clickable="true"
+            android:layout_height="92dp"
+            android:layout_margin="32dp"
+            android:textColor="#FFFFFF"
+            android:layout_gravity="center|bottom"
+            app:backgroundTint="@color/white"
+            android:background="@drawable/ic_camera_shutter"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:srcCompat="@drawable/ic_camera_shutter"
+            app:tint="@color/white" />
+<!--        <com.google.android.material.button.MaterialButton-->
+<!--            android:id="@+id/camera_click_button"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_gravity="bottom|center"-->
+<!--            android:background="@color/fui_transparent"-->
+<!--            android:textColor="#FFFFFF"-->
+<!--            android:textSize="20sp"-->
+<!--            android:icon="@drawable/ic"-->
+<!--            app:iconPadding="0dp"-->
+<!--            app:iconSize="48sp" />-->
     </FrameLayout>
 
     <LinearLayout

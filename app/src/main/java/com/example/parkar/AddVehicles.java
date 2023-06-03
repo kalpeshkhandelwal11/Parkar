@@ -7,6 +7,8 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageCapture;
+import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
@@ -14,9 +16,14 @@ import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 
+import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.text.InputFilter;
 import android.util.Log;
 import android.view.MenuItem;
@@ -41,7 +48,16 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.messaging.FirebaseMessaging;
 //import com.otaliastudios.cameraview.CameraView;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -59,6 +75,21 @@ public class AddVehicles extends AppCompatActivity {
     String vehicle_owner_id;
     String vehicle_societycode;
     String vehicle_type;
+    boolean isFullScreen = false;
+    int originalWidth,originalHeight;
+    Drawable oldBackground ;
+    float oldBorderRadius=50f;
+    ViewGroupOverlay oldLayoutViewOverlay;
+    View oldLayoutView;
+    PreviewView previewView;
+    Button cameraShutter;
+    ImageView vehicle_logo;
+
+    private ExecutorService cameraExecutor;
+    private ImageCapture imageCapture;
+    private static final int REQUEST_CODE_PERMISSIONS = 100;
+    private static final String[] REQUIRED_PERMISSIONS = new String[]{Manifest.permission.CAMERA};
+
 
     public static boolean isValidCarNo(String NUMBERPLATE) {
 
@@ -86,8 +117,15 @@ public class AddVehicles extends AppCompatActivity {
     }
 
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
-    ImageView vehicle_logo;
 
+    private boolean allPermissionsGranted() {
+        for (String permission : REQUIRED_PERMISSIONS) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                return false;
+            }
+        }
+        return true;
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -101,15 +139,23 @@ public class AddVehicles extends AppCompatActivity {
         vehicle_logo = findViewById(R.id.add_vehicle_image);
         vehicleNumber.setFilters(new InputFilter[]{new InputFilter.AllCaps()});
         cameraProviderFuture = ProcessCameraProvider.getInstance(this);
-        cameraProviderFuture.addListener(() -> {
-            try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-                bindPreview(cameraProvider);
-            } catch (ExecutionException | InterruptedException e) {
-                // No errors need to be handled for this Future.
-                // This should never be reached.
+        previewView = findViewById(R.id.previewView);
+        cameraShutter = findViewById(R.id.cameraShutter);
+        cameraShutter.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                try {
+                    captureImage();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
-        }, ContextCompat.getMainExecutor(this));
+        });
+        if (allPermissionsGranted()) {
+            startCamera();
+        } else {
+            requestPermissions(REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
+        }
         vehicleNumber.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View view, boolean b) {
@@ -135,7 +181,7 @@ public class AddVehicles extends AppCompatActivity {
 
         // showing the back button in action bar
         actionBar.setDisplayHomeAsUpEnabled(true);
-
+        cameraExecutor = Executors.newSingleThreadExecutor();
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -186,10 +232,10 @@ public class AddVehicles extends AppCompatActivity {
 
     void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
             oldLayoutView= findViewById(R.id.overlay_box);
-        PreviewView cameraView = findViewById(R.id.previewView);
-        cameraView.setImplementationMode(PreviewView.ImplementationMode.COMPATIBLE);
-        cameraView.getOverlay().add(findViewById(R.id.overlay_box));
-        cameraView.setOnClickListener(new View.OnClickListener() {
+
+        previewView.setImplementationMode(PreviewView.ImplementationMode.COMPATIBLE);
+        previewView.getOverlay().add(findViewById(R.id.overlay_box));
+        previewView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 //                onPreviewClick(view);
@@ -199,29 +245,41 @@ public class AddVehicles extends AppCompatActivity {
         Preview preview = new Preview.Builder()
                 .build();
 
-        preview.setSurfaceProvider(cameraView.getSurfaceProvider());
+        preview.setSurfaceProvider(previewView.getSurfaceProvider());
         CameraSelector cameraSelector = new CameraSelector.Builder()
                 .requireLensFacing(CameraSelector.LENS_FACING_BACK)
                 .build();
 
-        Camera camera = cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview);
+        imageCapture = new ImageCapture.Builder()
+                .build();
+        Camera camera = cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview,imageCapture);
     }
 
-    boolean isFullScreen = false;
-    int originalWidth,originalHeight;
-    Drawable oldBackground ;
-    float oldBorderRadius=50f;
-    ViewGroupOverlay oldLayoutViewOverlay;
-    View oldLayoutView;
-    public void onPreviewClick(View previewView) {
+    private void startCamera() {
+        cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+        cameraProviderFuture.addListener(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                    bindPreview(cameraProvider);
+
+                } catch (ExecutionException | InterruptedException e) {
+                    Log.e(TAG, "Error starting camera: " + e.getMessage());
+                }
+            }
+        }, ContextCompat.getMainExecutor(this));
+    }
+
+    public void onPreviewClick(View view) {
         if (isFullScreen) {
             // Shrink the preview back to its original size
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
-            ViewGroup.LayoutParams layoutParams = previewView.getLayoutParams();
+            ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
             layoutParams.width = originalWidth;
             layoutParams.height = originalHeight;
-            previewView.setLayoutParams(layoutParams);
+            view.setLayoutParams(layoutParams);
             LinearLayout addVehicleLayout = findViewById(R.id.add_vehicle_layout);
             addVehicleLayout.setVisibility(View.VISIBLE);
             findViewById(R.id.container_camera_preview_framelayout).setBackground(oldBackground);
@@ -230,17 +288,19 @@ public class AddVehicles extends AppCompatActivity {
             cardView.setRadius(oldBorderRadius);
             findViewById(R.id.overlay_label).setVisibility(View.VISIBLE);
             ((PreviewView)findViewById(R.id.previewView)).getOverlay().add(oldLayoutView);
+            cameraShutter.setVisibility(View.GONE);
+
         } else {
             // Expand the preview to full screen
             findViewById(R.id.overlay_label).setVisibility(View.GONE);
             LinearLayout addVehicleLayout = findViewById(R.id.add_vehicle_layout);
             addVehicleLayout.setVisibility(View.GONE);
-            ViewGroup.LayoutParams layoutParams = previewView.getLayoutParams();
+            ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
             originalWidth = layoutParams.width;
             originalHeight = layoutParams.height;
             layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
             layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
-            previewView.setLayoutParams(layoutParams);
+            view.setLayoutParams(layoutParams);
             getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                     WindowManager.LayoutParams.FLAG_FULLSCREEN);
             isFullScreen = true;
@@ -249,11 +309,87 @@ public class AddVehicles extends AppCompatActivity {
             CardView cardView = (CardView)findViewById(R.id.cardview_camera_preview);
             oldBorderRadius=cardView.getRadius();
             cardView.setRadius(0f);
-            oldLayoutViewOverlay = ((PreviewView)findViewById(R.id.previewView)).getOverlay();
-            ((PreviewView)findViewById(R.id.previewView)).setBackgroundColor(0x00000000);
-            ((PreviewView)findViewById(R.id.previewView)).getOverlay().clear();
-
+            oldLayoutViewOverlay = previewView.getOverlay();
+            previewView.setBackgroundColor(0x00000000);
+            previewView.getOverlay().clear();
+            cameraShutter.setVisibility(View.VISIBLE);
         }
+    }
+    public static String generateRandomId() {
+        // Generate a random UUID
+        UUID uuid = UUID.randomUUID();
+
+        // Convert UUID to string and remove hyphens
+        String randomId = uuid.toString().replaceAll("-", "");
+
+        return randomId;
+    }
+
+    File getAppSpecificAlbumStorageDir(Context context, String albumName) {
+        // Get the pictures directory that's inside the app-specific directory on
+        // external storage.
+        File file = new File(context.getExternalFilesDir(
+                Environment.DIRECTORY_PICTURES), albumName);
+        if (file == null || !file.mkdirs()) {
+            Log.e("image", "Directory not created");
+        }
+        return file;
+    }
+    private void captureImage() throws IOException {
+        File outputDirectory = getOutputDirectory();
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
+                .format(System.currentTimeMillis());
+
+        File photoFile = getAppSpecificAlbumStorageDir(this,timeStamp+".jpg");
+        Log.d("Image-Path",photoFile.getAbsolutePath());
+        ImageCapture.OutputFileOptions outputFileOptions =
+                new ImageCapture.OutputFileOptions.Builder(photoFile).build();
+
+
+        imageCapture.takePicture(outputFileOptions, cameraExecutor, new ImageCapture.OnImageSavedCallback() {
+            @Override
+            public void onImageSaved(ImageCapture.OutputFileResults outputFileResults) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(AddVehicles.this, "Image captured!", Toast.LENGTH_SHORT).show();
+                        Log.i("image","Image captured");
+                    }
+                });
+            }
+
+            @Override
+            public void onError(ImageCaptureException error) {
+                Log.e(TAG, "Error capturing image: " + error.getMessage());
+            }
+        });
+    }
+
+    private File getOutputDirectory() {
+        File dcimDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM+"/Car-Mitr");
+        File outputDir = new File(dcimDir, "Camera");
+        outputDir.mkdirs();
+        return outputDir;
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_CODE_PERMISSIONS) {
+            if (allPermissionsGranted()) {
+                startCamera();
+            } else {
+                Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        cameraExecutor.shutdown();
     }
 
     @Override
