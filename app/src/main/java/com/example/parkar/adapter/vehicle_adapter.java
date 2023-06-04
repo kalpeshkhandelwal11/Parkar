@@ -104,7 +104,7 @@ public vehicle_adapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, 
         holder.download.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String url = "http://172.16.91.26:80/parkar/verifyer.php?id="+model.getVehicle_number()+"&&uid="+model.getVehicle_owner_id();
+                String url = "https://parkerapp.000webhostapp.com/verifyer.php?id="+model.getVehicle_number()+"&&uid="+model.getVehicle_owner_id();
                 Intent i = new Intent(Intent.ACTION_VIEW);
                 i.setData(Uri.parse(url));
                 v.getContext().startActivity(i);

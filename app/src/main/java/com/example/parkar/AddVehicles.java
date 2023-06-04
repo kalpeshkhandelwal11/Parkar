@@ -3,8 +3,6 @@ package com.example.parkar;
 import static android.content.ContentValues.TAG;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.UiThread;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.Camera;
@@ -13,8 +11,6 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.camera.view.CameraController;
-import androidx.camera.view.LifecycleCameraController;
 import androidx.camera.view.PreviewView;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
@@ -23,21 +19,17 @@ import androidx.lifecycle.LifecycleOwner;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.MediaStore;
 import android.text.InputFilter;
 import android.util.Log;
 import android.view.MenuItem;
-import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroupOverlay;
@@ -49,7 +41,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.parkar.model.add_vehicle_model;
-import com.example.parkar.model.user_registration_model;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -61,9 +52,7 @@ import com.google.firebase.messaging.FirebaseMessaging;
 //import com.otaliastudios.cameraview.CameraView;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Locale;
@@ -80,6 +69,12 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import id.zelory.compressor.Compressor;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 
 public class AddVehicles extends AppCompatActivity {
@@ -284,6 +279,7 @@ public class AddVehicles extends AppCompatActivity {
                                 );
                                 Toast.makeText(AddVehicles.this, "Image sent to firebase", Toast.LENGTH_SHORT).show();
                                 Log.i("image-capture-firebase","image sent to firebase");
+                                sendToServer();
                                 // Perform further operations (e.g., save the URL to a database)
                             }
                         }).addOnFailureListener(new OnFailureListener() {
@@ -303,6 +299,98 @@ public class AddVehicles extends AppCompatActivity {
                 });
 
 
+            }
+        });
+    }
+//    void sendToServer(){
+//        MyApiService apiService = RetrofitClient.getRetrofitInstance().create(MyApiService.class);
+//        RequestBody fileRequestBody = RequestBody.create(MediaType.parse("application/octet-stream"), photoFile);
+//
+//        // Create the MultipartBody.Part for the file
+//        MultipartBody.Part filePart = MultipartBody.Part.createFormData("file", photoFile.getName(), fileRequestBody);
+//
+//        // Create other request body parameters
+//        RequestBody description = RequestBody.create(MediaType.parse("text/plain"), "File description");
+//
+//        // Call the API method for file upload
+//        Call<UploadResponse> call = apiService.uploadFile(description,filePart);
+//
+//        call.enqueue(new Callback<UploadResponse>() {
+//            @Override
+//            public void onResponse(Call<UploadResponse> call, Response<UploadResponse> response) {
+//                if (response.isSuccessful()) {
+//                    // File upload successful
+//                    UploadResponse uploadResponse = response.body();
+//                    if (uploadResponse != null) {
+//                        // Handle the response data
+//                        String vehicleNumber = uploadResponse.getVehicleNumber();
+//                        boolean isCar = uploadResponse.isCar();
+//                        String color = uploadResponse.getColor();
+//
+//                        // Perform actions based on the response
+//                        System.out.println("File upload successful");
+//                        System.out.println("Vehicle Number: " + vehicleNumber);
+//                        System.out.println("Is Car: " + isCar);
+//                        System.out.println("Color: " + color);
+//                    }
+//                } else {
+//                    // File upload failed
+//                    System.out.println("File upload failed");
+//                }
+//            }
+//
+//            @Override
+//            public void onFailure(Call<UploadResponse> call, Throwable t) {
+//                // Handle network errors or API call failures
+//                t.printStackTrace();
+//            }
+//        });
+//    }
+
+    void sendToServer(){
+
+
+        // Create an instance of the API service interface
+        MyApiService apiService = RetrofitClient.getRetrofitInstance().create(MyApiService.class);
+
+        // Create the request body for the file
+        RequestBody fileRequestBody = RequestBody.create(MediaType.parse("application/octet-stream"), photoFile);
+
+        // Create the MultipartBody.Part for the file
+        MultipartBody.Part filePart = MultipartBody.Part.createFormData("file", photoFile.getName(), fileRequestBody);
+        FileUploadRequest request = new FileUploadRequest(imageUrl);
+
+        // Call the API method for file upload
+        Call<FileUploadResponse> call = apiService.uploadFile(request);
+
+        // Enqueue the API call
+        call.enqueue(new Callback<FileUploadResponse>() {
+            @Override
+            public void onResponse(Call<FileUploadResponse> call, Response<FileUploadResponse> response) {
+                if (response.isSuccessful()) {
+                    // File upload successful
+                    FileUploadResponse uploadResponse = response.body();
+                    if (uploadResponse != null) {
+                        // Handle the response data
+                        String fileUrl = imageUrl;
+                        // Perform actions based on the response
+                        System.out.println("File upload successful");
+                        System.out.println("File URL: " + fileUrl);
+                        System.out.println("Response: "+response.body());
+                    }
+                } else {
+                    // File upload failed
+                    System.out.println("File upload failed");
+                }
+            }
+
+            public void onFailure(Call<FileUploadResponse> call, Throwable t) {
+                try {
+                    throw t;
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    throw new RuntimeException(e);
+                }
             }
         });
     }
@@ -328,7 +416,7 @@ public class AddVehicles extends AppCompatActivity {
             Bitmap bitmap = BitmapFactory.decodeFile(photoFile.getAbsolutePath());
             int nh = (int) ( bitmap.getHeight() * (512.0 / bitmap.getWidth()) );
 
-            bitmap=Bitmap.createScaledBitmap(bitmap, 512, nh, true);
+//            bitmap=Bitmap.createScaledBitmap(bitmap, 512, nh, true);
             bitmap = new Compressor(AddVehicles.this).compressToBitmap(photoFile);
 
             if (rotationDegrees != 0) {
@@ -485,12 +573,46 @@ public class AddVehicles extends AppCompatActivity {
 
                         Toast.makeText(AddVehicles.this, "Image captured!", Toast.LENGTH_SHORT).show();
                         previewView.performClick();
-                        setOverlayInApp();
+                        try {
+                            ExifInterface exifInterface = new ExifInterface(photoFile);
+                            int orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
 
+                            int rotationDegrees = 0;
+                            switch (orientation) {
+                                case ExifInterface.ORIENTATION_ROTATE_90:
+                                    rotationDegrees = 90;
+                                    break;
+                                case ExifInterface.ORIENTATION_ROTATE_180:
+                                    rotationDegrees = 180;
+                                    break;
+                                case ExifInterface.ORIENTATION_ROTATE_270:
+                                    rotationDegrees = 270;
+                                    break;
+                            }
 
-//                        Bitmap myBitmap = BitmapFactory.decodeFile(photoFile.getAbsolutePath());
-//
-//                        overlay.setImageBitmap(myBitmap);
+                            // Load the captured image into a Bitmap
+                            Bitmap bitmap = BitmapFactory.decodeFile(photoFile.getAbsolutePath());
+
+                            if (rotationDegrees != 0) {
+                                // Create a matrix and set the rotation
+                                Matrix matrix = new Matrix();
+                                matrix.setRotate(rotationDegrees);
+
+                                // Apply the rotation to the bitmap
+                                Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+
+                                // Set the rotated bitmap to the ImageView
+                                overlay.setImageBitmap(rotatedBitmap);
+
+                                // Recycle the original bitmap to free up memory
+                                bitmap.recycle();
+                            } else {
+                                // No rotation needed, directly set the bitmap to the ImageView
+                                overlay.setImageBitmap(bitmap);
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                         Log.i("image", "Image captured");
                     }
                 });
