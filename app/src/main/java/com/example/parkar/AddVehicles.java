@@ -223,13 +223,7 @@ public class AddVehicles extends AppCompatActivity {
                 vehicle_owner_id = mAuth.getCurrentUser().getUid().toString();
 
                 add_vehicle_model data = new add_vehicle_model(vehicle_model, vehicle_nickname, vehicle_number, vehicle_owner, vehicle_owner_id, vehicle_societycode, vehicle_type);
-                myRef.child(vehicle_number).updateChildren(
-                        new HashMap<String, Object>() {
-                            {
-                                put("vehicle_image", imageUrl);
-                            }
-                        }
-                );
+
                 myRef.child(vehicle_number).setValue(data).addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void unused) {
@@ -257,6 +251,13 @@ public class AddVehicles extends AppCompatActivity {
                         Toast.makeText(AddVehicles.this, e.toString(), Toast.LENGTH_SHORT).show();
                     }
                 });
+                myRef.child(vehicle_number).updateChildren(
+                        new HashMap<String, Object>() {
+                            {
+                                put("vehicle_image", imageUrl);
+                            }
+                        }
+                );
                 imageUrl = baseImageUrl + fileName;
                 FirebaseStorage storage = FirebaseStorage.getInstance();
 
