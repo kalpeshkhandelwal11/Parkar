@@ -20,9 +20,12 @@ import com.example.parkar.model.add_vehicle_model;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.List;
 
@@ -42,9 +45,18 @@ public vehicle_adapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, 
         return new vehicle_adapter.ViewHolder(view);
         }
     public void removeAt(int position) {
-        vehicleData.remove(position);
         notifyItemRemoved(position);
         notifyItemRangeChanged(position, vehicleData.size());
+    }
+    private void delete(add_vehicle_model model) {
+        // creating a variable for our Database
+        // Reference for Firebase.
+        DatabaseReference dbref= FirebaseDatabase.getInstance().getReference("vehicle/"+model.getVehicle_number());
+        // we are use add listerner
+        // for event listener method
+        // which is called with query.
+        dbref.removeValue();
+
     }
     @Override
     public void onBindViewHolder(@NonNull vehicle_adapter.ViewHolder holder, int position) {
@@ -58,12 +70,22 @@ public vehicle_adapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, 
         holder.delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mDatabase = FirebaseDatabase.getInstance().getReference("vehicle/"+model.getVehicle_number());
+                // Get the position of the clicked item
+                int clickedPosition = holder.getAdapterPosition();
+
+                // Get the corresponding model object
+                add_vehicle_model clickedItem = vehicleData.get(clickedPosition);
+
+                // Remove the item from the dataset
+                vehicleData.remove(clickedPosition);
+                notifyItemRemoved(clickedPosition);
+
+                // Delete the item from the Firebase database
+                mDatabase = FirebaseDatabase.getInstance().getReference("vehicle/" + clickedItem.getVehicle_number());
                 mDatabase.removeValue(new DatabaseReference.CompletionListener() {
                     @Override
                     public void onComplete(@Nullable DatabaseError error, @NonNull DatabaseReference ref) {
                         Toast.makeText(v.getContext(), "Vehicle Deleted Successfully", Toast.LENGTH_SHORT).show();
-                        removeAt(holder.getAdapterPosition());
                     }
                 });
             }

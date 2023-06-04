@@ -50,37 +50,34 @@ public class ViewVehicle extends AppCompatActivity {
         actionBar.setDisplayHomeAsUpEnabled(true);
         final DatabaseReference nm= FirebaseDatabase.getInstance().getReference("vehicle");
         nm.addValueEventListener(new ValueEventListener() {
-
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 String curuid = mAuth.getCurrentUser().getUid();
                 vehicleData.clear();
-                if (dataSnapshot.exists()){
-                    for(DataSnapshot id:dataSnapshot.getChildren()){
-                        String ID = id.child("vehicle_owner_id").getValue().toString();
-                        String number=id.child("vehicle_number").getValue().toString();
-                        String model =id.child("vehicle_model").getValue().toString();
-                        String nickname =id.child("vehicle_nickname").getValue().toString();
-                        String type =id.child("vehicle_type").getValue().toString();
-                        String society =id.child("vehicle_societycode").getValue().toString();
-                        add_vehicle_model work=new add_vehicle_model(model,nickname,number,"",ID,society,type);
-                       if(curuid.equals(ID)) {
-                           vehicleData.add(work);
-                           if(count==1){
-                               adapter = new vehicle_adapter(vehicleData);
-                               count++;
-                           }
-                           adapter.notifyDataSetChanged();
-                           rv.setAdapter(adapter);
-                       }
+                if (dataSnapshot.exists()) {
+                    for (DataSnapshot id : dataSnapshot.getChildren()) {
+                        String ID = id.child("vehicle_owner_id").getValue(String.class);
+                        String number = id.child("vehicle_number").getValue(String.class);
+                        String model = id.child("vehicle_model").getValue(String.class);
+                        String nickname = id.child("vehicle_nickname").getValue(String.class);
+                        String type = id.child("vehicle_type").getValue(String.class);
+                        String society = id.child("vehicle_societycode").getValue(String.class);
 
+                        add_vehicle_model work = new add_vehicle_model(model, nickname, number, "", ID, society, type);
+                        if (curuid.equals(ID)) {
+                            vehicleData.add(work);
+                        }
                     }
+                    adapter = new vehicle_adapter(vehicleData); // Update the adapter with the new data
+                    rv.setAdapter(adapter);
+                    adapter.notifyDataSetChanged();
                 }
             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-           }
+                // Handle onCancelled if needed
+            }
         });
 
         addvehicle.setOnClickListener(new View.OnClickListener() {
