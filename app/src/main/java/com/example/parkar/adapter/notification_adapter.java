@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.parkar.EditVehicle;
 import com.example.parkar.R;
+import com.example.parkar.model.add_vehicle_model;
 import com.example.parkar.model.notification_model;
 import com.example.parkar.ui.home.HomeFragment;
 import com.google.firebase.auth.FirebaseAuth;
@@ -88,8 +89,14 @@ public class notification_adapter extends RecyclerView.Adapter<notification_adap
                 mDatabase.removeValue(new DatabaseReference.CompletionListener() {
                     @Override
                     public void onComplete(@Nullable DatabaseError error, @NonNull DatabaseReference ref) {
-                        Toast.makeText(v.getContext(), "NOtification Removed Successfully", Toast.LENGTH_SHORT).show();
-                        v.getContext().startActivity(new Intent(v.getContext(), HomeFragment.class));
+                        Toast.makeText(v.getContext(), "Notification Removed Successfully", Toast.LENGTH_SHORT).show();
+                        int clickedPosition = holder.getAdapterPosition();
+                        notification_model clickedItem = notificationData.get(clickedPosition);
+
+                        // Remove the item from the dataset
+                        notificationData.remove(clickedPosition);
+                        notifyItemRemoved(clickedPosition);
+
                     }
                 });
             }

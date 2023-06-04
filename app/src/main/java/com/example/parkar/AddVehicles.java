@@ -246,8 +246,8 @@ public class AddVehicles extends AppCompatActivity {
                     public void onSuccess(Void unused) {
 
 //                        findViewById(R.id.container_camera_preview_framelayout).setVisibility(View.GONE);
-
-                        Toast.makeText(AddVehicles.this, "Vehicle Added Successfully", Toast.LENGTH_SHORT).show();
+                        add.setEnabled(false);
+                        Toast.makeText(AddVehicles.this, "Vehicle Added Successfully\nplease wait for verification", Toast.LENGTH_SHORT).show();
                         FirebaseMessaging.getInstance().subscribeToTopic(vehicle_number)
                                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                                     @Override
@@ -266,6 +266,7 @@ public class AddVehicles extends AppCompatActivity {
                     @Override
                     public void onFailure(@NonNull Exception e) {
                         Toast.makeText(AddVehicles.this, e.toString(), Toast.LENGTH_SHORT).show();
+                        add.setEnabled(false);
                     }
                 });
 //                imageUrl = baseImageUrl + fileName;
@@ -411,11 +412,13 @@ public class AddVehicles extends AppCompatActivity {
                         System.out.println("Vehicle Number:" + uploadResponse.getVehicleNumber());
                         System.out.println("isCar:" + uploadResponse.isCar());
                     }
+                    add.setEnabled(true);
                     finish();
                 } else {
                     // File upload failed
-
-                    System.out.println("File upload failed");
+                    add.setEnabled(false);
+                    Toast.makeText(AddVehicles.this, "The provided image is not a car!\nPlease try again with a better photo", Toast.LENGTH_SHORT).show();
+                    System.out.println("The provided image is not a car");
                 }
             }
 
@@ -423,6 +426,7 @@ public class AddVehicles extends AppCompatActivity {
                 try {
 
                     findViewById(R.id.container_camera_preview_framelayout).setVisibility(View.VISIBLE);
+                    add.setEnabled(true);
 
                     Toast.makeText(AddVehicles.this, "Vehicle Verification Failed!\nPlease try again with a better photo", Toast.LENGTH_SHORT).show();
 
