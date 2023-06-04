@@ -1,5 +1,7 @@
 package com.example.parkar.model;
 
+import java.io.File;
+
 public class add_vehicle_model {
     String vehicle_model;
     String vehicle_nickname;

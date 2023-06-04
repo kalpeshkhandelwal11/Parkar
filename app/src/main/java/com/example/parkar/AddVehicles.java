@@ -3,6 +3,8 @@ package com.example.parkar;
 import static android.content.ContentValues.TAG;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.Camera;
@@ -27,6 +29,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -45,6 +49,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.parkar.model.add_vehicle_model;
+import com.example.parkar.model.user_registration_model;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -60,6 +65,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -69,12 +75,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+
+import id.zelory.compressor.Compressor;
 
 
 public class AddVehicles extends AppCompatActivity {
     Button add;
     private FirebaseAuth mAuth;
     TextView vehicleType, vehicleNumber, vehicleModel, vehicle_NickName, VehicleCode;
+    String baseImageUrl = "https://park-kar-624f3.appspot.com.storage.googleapis.com/";
+    String imageUrl = "";
     String vehicle_model;
     String vehicle_nickname;
     String vehicle_number;
@@ -83,9 +96,9 @@ public class AddVehicles extends AppCompatActivity {
     String vehicle_societycode;
     String vehicle_type;
     boolean isFullScreen = false;
-    int originalWidth,originalHeight;
-    Drawable oldBackground ;
-    float oldBorderRadius=50f;
+    int originalWidth, originalHeight;
+    Drawable oldBackground;
+    float oldBorderRadius = 50f;
     ViewGroupOverlay oldLayoutViewOverlay;
     View oldLayoutView;
     PreviewView previewView;
@@ -134,6 +147,7 @@ public class AddVehicles extends AppCompatActivity {
         }
         return true;
     }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -150,7 +164,7 @@ public class AddVehicles extends AppCompatActivity {
 
         previewView = findViewById(R.id.previewView);
         cameraShutter = findViewById(R.id.cameraShutter);
-        overlay  = findViewById(R.id.overlay_box);
+        overlay = findViewById(R.id.overlay_box);
         cameraShutter.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -198,6 +212,7 @@ public class AddVehicles extends AppCompatActivity {
 
                 FirebaseDatabase database = FirebaseDatabase.getInstance();
                 DatabaseReference myRef = database.getReference("vehicle");
+
                 mAuth = FirebaseAuth.getInstance();
                 vehicle_model = vehicleModel.getText().toString();
                 vehicle_type = vehicleType.getText().toString();
@@ -208,6 +223,13 @@ public class AddVehicles extends AppCompatActivity {
                 vehicle_owner_id = mAuth.getCurrentUser().getUid().toString();
 
                 add_vehicle_model data = new add_vehicle_model(vehicle_model, vehicle_nickname, vehicle_number, vehicle_owner, vehicle_owner_id, vehicle_societycode, vehicle_type);
+                myRef.child(vehicle_number).updateChildren(
+                        new HashMap<String, Object>() {
+                            {
+                                put("vehicle_image", imageUrl);
+                            }
+                        }
+                );
                 myRef.child(vehicle_number).setValue(data).addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void unused) {
@@ -235,13 +257,101 @@ public class AddVehicles extends AppCompatActivity {
                         Toast.makeText(AddVehicles.this, e.toString(), Toast.LENGTH_SHORT).show();
                     }
                 });
+                imageUrl = baseImageUrl + fileName;
+                FirebaseStorage storage = FirebaseStorage.getInstance();
+
+                StorageReference storageRef = storage.getReference();
+                StorageReference fileRef = storageRef.child("images/" + fileName);
+                File compressedImageFile=photoFile;
+                try {
+                    compressedImageFile = new Compressor(AddVehicles.this).compressToFile(photoFile);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                UploadTask uploadTask = fileRef.putFile(Uri.fromFile(compressedImageFile));
+                uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        // File uploaded successfully
+                        // Retrieve the download URL
+                        fileRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                            @Override
+                            public void onSuccess(Uri downloadUrl) {
+                                // Handle the download URL
+                                imageUrl = downloadUrl.toString();
+                                Toast.makeText(AddVehicles.this, "Image sent to firebase", Toast.LENGTH_SHORT).show();
+                                Log.i("image-capture-firebase","image sent to firebase");
+                                // Perform further operations (e.g., save the URL to a database)
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                // Error occurred while retrieving the download URL
+                                // Handle the error
+                            }
+                        });
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        // Error occurred during file upload
+                        // Handle the error
+                    }
+                });
+
 
             }
         });
     }
+    void setOverlayInApp(){
+        try {
+            ExifInterface exifInterface = new ExifInterface(photoFile);
+            int orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
 
+            int rotationDegrees = 0;
+            switch (orientation) {
+                case ExifInterface.ORIENTATION_ROTATE_90:
+                    rotationDegrees = 90;
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_180:
+                    rotationDegrees = 180;
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_270:
+                    rotationDegrees = 270;
+                    break;
+            }
+
+            // Load the captured image into a Bitmap
+            Bitmap bitmap = BitmapFactory.decodeFile(photoFile.getAbsolutePath());
+            int nh = (int) ( bitmap.getHeight() * (512.0 / bitmap.getWidth()) );
+
+            bitmap=Bitmap.createScaledBitmap(bitmap, 512, nh, true);
+            bitmap = new Compressor(AddVehicles.this).compressToBitmap(photoFile);
+
+            if (rotationDegrees != 0) {
+                // Create a matrix and set the rotation
+                Matrix matrix = new Matrix();
+                matrix.setRotate(rotationDegrees);
+//                                File compressedImageFile = new Compressor(AddVehicles.this).compressToFile(photoFile);
+                // Apply the rotation to the bitmap
+                Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+                // Set the rotated bitmap to the ImageView
+                overlay.setImageBitmap(rotatedBitmap);
+
+                // Recycle the original bitmap to free up memory
+                bitmap.recycle();
+            } else {
+                // No rotation needed, directly set the bitmap to the ImageView
+                overlay.setImageBitmap(bitmap);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
     void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
-        oldLayoutView= findViewById(R.id.overlay_box);
+        oldLayoutView = findViewById(R.id.overlay_box);
         previewView.setImplementationMode(PreviewView.ImplementationMode.COMPATIBLE);
         previewView.getOverlay().add(findViewById(R.id.overlay_box));
         previewView.setOnClickListener(new View.OnClickListener() {
@@ -262,7 +372,7 @@ public class AddVehicles extends AppCompatActivity {
         imageCapture = new ImageCapture.Builder()
                 .build();
 
-        Camera camera = cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview,imageCapture);
+        Camera camera = cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview, imageCapture);
 
 //        imageCapture.setTargetRotation(Surface.ROTATION_180);
     }
@@ -298,10 +408,10 @@ public class AddVehicles extends AppCompatActivity {
             addVehicleLayout.setVisibility(View.VISIBLE);
             findViewById(R.id.container_camera_preview_framelayout).setBackground(oldBackground);
             isFullScreen = false;
-            CardView cardView = (CardView)findViewById(R.id.cardview_camera_preview);
+            CardView cardView = (CardView) findViewById(R.id.cardview_camera_preview);
             cardView.setRadius(oldBorderRadius);
             findViewById(R.id.overlay_label).setVisibility(View.VISIBLE);
-            ((PreviewView)findViewById(R.id.previewView)).getOverlay().add(oldLayoutView);
+            ((PreviewView) findViewById(R.id.previewView)).getOverlay().add(oldLayoutView);
             cameraShutter.setVisibility(View.GONE);
 
         } else {
@@ -318,10 +428,10 @@ public class AddVehicles extends AppCompatActivity {
             getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                     WindowManager.LayoutParams.FLAG_FULLSCREEN);
             isFullScreen = true;
-            oldBackground=findViewById(R.id.container_camera_preview_framelayout).getBackground();
+            oldBackground = findViewById(R.id.container_camera_preview_framelayout).getBackground();
             findViewById(R.id.container_camera_preview_framelayout).setBackgroundColor(0x00000000);
-            CardView cardView = (CardView)findViewById(R.id.cardview_camera_preview);
-            oldBorderRadius=cardView.getRadius();
+            CardView cardView = (CardView) findViewById(R.id.cardview_camera_preview);
+            oldBorderRadius = cardView.getRadius();
             cardView.setRadius(0f);
             oldLayoutViewOverlay = previewView.getOverlay();
             previewView.setBackgroundColor(0x00000000);
@@ -329,6 +439,7 @@ public class AddVehicles extends AppCompatActivity {
             cameraShutter.setVisibility(View.VISIBLE);
         }
     }
+
     public static String generateRandomId() {
         // Generate a random UUID
         UUID uuid = UUID.randomUUID();
@@ -349,15 +460,18 @@ public class AddVehicles extends AppCompatActivity {
         }
         return file;
     }
+    File photoFile;
+    String fileName;
     private void captureImage() throws IOException {
         File outputDirectory = getOutputDirectory();
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
                 .format(System.currentTimeMillis());
 
-        File photoFile = getAppSpecificAlbumStorageDir(this,timeStamp+".jpg");
-        Log.d("Image-Path",photoFile.getAbsolutePath());
+        photoFile= getAppSpecificAlbumStorageDir(this, timeStamp + ".jpg");
+        Log.d("Image-Path", photoFile.getAbsolutePath());
         ImageCapture.OutputFileOptions outputFileOptions =
                 new ImageCapture.OutputFileOptions.Builder(photoFile).build();
+        fileName= photoFile.getName();
 
         imageCapture.takePicture(outputFileOptions, cameraExecutor, new ImageCapture.OnImageSavedCallback() {
             @Override
@@ -365,55 +479,20 @@ public class AddVehicles extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+
                         Toast.makeText(AddVehicles.this, "Image captured!", Toast.LENGTH_SHORT).show();
                         previewView.performClick();
-                        try {
-                            ExifInterface exifInterface = new ExifInterface(photoFile);
-                            int orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+                        setOverlayInApp();
 
-                            int rotationDegrees = 0;
-                            switch (orientation) {
-                                case ExifInterface.ORIENTATION_ROTATE_90:
-                                    rotationDegrees = 90;
-                                    break;
-                                case ExifInterface.ORIENTATION_ROTATE_180:
-                                    rotationDegrees = 180;
-                                    break;
-                                case ExifInterface.ORIENTATION_ROTATE_270:
-                                    rotationDegrees = 270;
-                                    break;
-                            }
 
-                            // Load the captured image into a Bitmap
-                            Bitmap bitmap = BitmapFactory.decodeFile(photoFile.getAbsolutePath());
-
-                            if (rotationDegrees != 0) {
-                                // Create a matrix and set the rotation
-                                Matrix matrix = new Matrix();
-                                matrix.setRotate(rotationDegrees);
-
-                                // Apply the rotation to the bitmap
-                                Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-
-                                // Set the rotated bitmap to the ImageView
-                                overlay.setImageBitmap(rotatedBitmap);
-
-                                // Recycle the original bitmap to free up memory
-                                bitmap.recycle();
-                            } else {
-                                // No rotation needed, directly set the bitmap to the ImageView
-                                overlay.setImageBitmap(bitmap);
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
 //                        Bitmap myBitmap = BitmapFactory.decodeFile(photoFile.getAbsolutePath());
 //
 //                        overlay.setImageBitmap(myBitmap);
-                        Log.i("image","Image captured");
+                        Log.i("image", "Image captured");
                     }
                 });
             }
+
             @Override
             public void onError(ImageCaptureException error) {
                 Log.e(TAG, "Error capturing image: " + error.getMessage());
@@ -422,7 +501,7 @@ public class AddVehicles extends AppCompatActivity {
     }
 
     private File getOutputDirectory() {
-        File dcimDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM+"/Car-Mitr");
+        File dcimDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + "/Car-Mitr");
         File outputDir = new File(dcimDir, "Camera");
         outputDir.mkdirs();
         return outputDir;
