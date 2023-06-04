@@ -17,6 +17,7 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.example.parkar.databinding.ActivityUserDashboardBinding;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class User_dashboard extends AppCompatActivity {
 
@@ -52,10 +53,12 @@ public class User_dashboard extends AppCompatActivity {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         // We are using switch case because multiple icons can be kept
         switch (item.getItemId()) {
-            case R.id.qrscanButton:
-
-                Intent intent = new Intent(getApplicationContext(),Scanner.class);
+            case R.id.menu_logout:
+                FirebaseAuth.getInstance().signOut();
+                Intent intent = new Intent(getApplicationContext(), Login.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
+                finish();
                 break;
         }
         return super.onOptionsItemSelected(item);

@@ -1,12 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
-
-    <!--we are using  app:showAsAction="ifRoom" so that share
-        button is added in toolbar. -->
+<!-- menu.xml -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/qrscanButton"
-        android:icon="@drawable/qr_code_scanner"
-        android:title="SHARE"
-        app:showAsAction="ifRoom" />
+        android:id="@+id/menu_logout"
+        android:title="Logout"
+        android:icon="@drawable/collapse"
+        android:orderInCategory="100"
+
+         />
 </menu>
