@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Parkar</string>
+    <string name="app_name">CarMitra</string>
     <string name="title_activity_maps">MapsActivity</string>
     <string name="fcm_message">Parkar Notification</string>
     <string name="default_notification_channel_id">fcm_default_channel</string>
