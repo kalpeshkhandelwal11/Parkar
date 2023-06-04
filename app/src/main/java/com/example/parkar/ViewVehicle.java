@@ -32,7 +32,7 @@ public class ViewVehicle extends AppCompatActivity {
     // Firebase Realtime Database
     private FirebaseAuth mAuth;
     FloatingActionButton addvehicle;
-
+    int count=1;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,21 +41,20 @@ public class ViewVehicle extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         //recycler
         rv=(RecyclerView)findViewById(R.id.recycler1);
-        rv.setHasFixedSize(true);
+        rv.setHasFixedSize(false);
         rv.setLayoutManager(new LinearLayoutManager(this));
         vehicleData=new ArrayList<>();
         addvehicle = findViewById(R.id.add_vehicle_fab);
-
         ActionBar actionBar = getSupportActionBar();
-
         // showing the back button in action bar
         actionBar.setDisplayHomeAsUpEnabled(true);
-
         final DatabaseReference nm= FirebaseDatabase.getInstance().getReference("vehicle");
         nm.addValueEventListener(new ValueEventListener() {
+
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 String curuid = mAuth.getCurrentUser().getUid();
+                vehicleData.clear();
                 if (dataSnapshot.exists()){
                     for(DataSnapshot id:dataSnapshot.getChildren()){
                         String ID = id.child("vehicle_owner_id").getValue().toString();
@@ -67,9 +66,13 @@ public class ViewVehicle extends AppCompatActivity {
                         add_vehicle_model work=new add_vehicle_model(model,nickname,number,"",ID,society,type);
                        if(curuid.equals(ID)) {
                            vehicleData.add(work);
-                           adapter = new vehicle_adapter(vehicleData);
+                           if(count==1){
+                               adapter = new vehicle_adapter(vehicleData);
+                               count++;
+                           }
+                           adapter.notifyDataSetChanged();
                            rv.setAdapter(adapter);
-                      }
+                       }
 
                     }
                 }

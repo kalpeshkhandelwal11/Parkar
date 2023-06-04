@@ -184,7 +184,9 @@ public class AddVehicles extends AppCompatActivity {
             @Override
             public void onFocusChange(View view, boolean b) {
                 if (isValidCarNo(vehicleNumber.getText().toString())) {
-                    add.setEnabled(true);
+                    if(overlay.getDrawable()!=null){
+                        add.setEnabled(true);
+                    }
                 } else {
                     add.setEnabled(false);
                 }
@@ -240,10 +242,7 @@ public class AddVehicles extends AppCompatActivity {
 //                                        Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
                                     }
                                 });
-
-                        Intent intent = new Intent(getApplicationContext(), Vehicles.class);
-                        startActivity(intent);
-
+                        finish();
                     }
                 }).addOnFailureListener(new OnFailureListener() {
                     @Override
@@ -251,14 +250,9 @@ public class AddVehicles extends AppCompatActivity {
                         Toast.makeText(AddVehicles.this, e.toString(), Toast.LENGTH_SHORT).show();
                     }
                 });
-                myRef.child(vehicle_number).updateChildren(
-                        new HashMap<String, Object>() {
-                            {
-                                put("vehicle_image", imageUrl);
-                            }
-                        }
-                );
-                imageUrl = baseImageUrl + fileName;
+//                imageUrl = baseImageUrl + fileName;
+
+
                 FirebaseStorage storage = FirebaseStorage.getInstance();
 
                 StorageReference storageRef = storage.getReference();
@@ -281,6 +275,13 @@ public class AddVehicles extends AppCompatActivity {
                             public void onSuccess(Uri downloadUrl) {
                                 // Handle the download URL
                                 imageUrl = downloadUrl.toString();
+                                myRef.child(vehicle_number).updateChildren(
+                                        new HashMap<String, Object>() {
+                                            {
+                                                put("vehicle_image", imageUrl);
+                                            }
+                                        }
+                                );
                                 Toast.makeText(AddVehicles.this, "Image sent to firebase", Toast.LENGTH_SHORT).show();
                                 Log.i("image-capture-firebase","image sent to firebase");
                                 // Perform further operations (e.g., save the URL to a database)
@@ -349,6 +350,7 @@ public class AddVehicles extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        vehicleNumber.requestFocus();
 
     }
     void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {

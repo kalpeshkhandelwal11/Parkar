@@ -41,7 +41,11 @@ public vehicle_adapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, 
         View view= LayoutInflater.from(parent.getContext()).inflate(R.layout.vehicle_card,parent,false);
         return new vehicle_adapter.ViewHolder(view);
         }
-
+    public void removeAt(int position) {
+        vehicleData.remove(position);
+        notifyItemRemoved(position);
+        notifyItemRangeChanged(position, vehicleData.size());
+    }
     @Override
     public void onBindViewHolder(@NonNull vehicle_adapter.ViewHolder holder, int position) {
         add_vehicle_model model=vehicleData.get(position);
@@ -59,7 +63,7 @@ public vehicle_adapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, 
                     @Override
                     public void onComplete(@Nullable DatabaseError error, @NonNull DatabaseReference ref) {
                         Toast.makeText(v.getContext(), "Vehicle Deleted Successfully", Toast.LENGTH_SHORT).show();
-                        v.getContext().startActivity(new Intent(v.getContext(), ViewVehicle.class));
+                        removeAt(holder.getAdapterPosition());
                     }
                 });
             }
