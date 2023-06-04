@@ -10,14 +10,6 @@
     tools:context=".AddVehicles">
 
 
-    <ImageView
-        android:id="@+id/add_vehicle_image"
-        android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:layout_marginTop="-15dp"
-        android:scaleType="fitXY"
-        android:visibility="gone"
-        app:srcCompat="@drawable/add_vehicle" />
 
 
     <!--        <com.otaliastudios.cameraview.CameraView-->
@@ -62,8 +54,8 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/overlay_label"
             android:layout_width="wrap_content"
+            android:clickable="true"
             android:layout_height="wrap_content"
-            android:visibility="gone"
             android:layout_gravity="center"
             android:background="@color/fui_transparent"
             android:textColor="#FFFFFF"

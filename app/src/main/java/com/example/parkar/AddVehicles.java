@@ -5,6 +5,7 @@ import static android.content.ContentValues.TAG;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.LinearLayoutCompat;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
@@ -13,6 +14,7 @@ import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.cardview.widget.CardView;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 import androidx.exifinterface.media.ExifInterface;
 import androidx.lifecycle.LifecycleOwner;
@@ -29,6 +31,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.text.InputFilter;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,6 +40,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -95,6 +99,7 @@ public class AddVehicles extends AppCompatActivity {
     Drawable oldBackground;
     float oldBorderRadius = 50f;
     ViewGroupOverlay oldLayoutViewOverlay;
+
     View oldLayoutView;
     PreviewView previewView;
     Button cameraShutter;
@@ -143,6 +148,13 @@ public class AddVehicles extends AppCompatActivity {
         return true;
     }
 
+    LinearLayoutCompat progressBarLayout;
+    ProgressBar progressBar;
+    TextView messageTextView;
+    View progress_bar_layout_constraint;
+    ConstraintLayout constraintLayout;
+    ConstraintLayout add_vehicles_constraint;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -153,12 +165,20 @@ public class AddVehicles extends AppCompatActivity {
         vehicleModel = findViewById(R.id.addv_model);
         vehicle_NickName = findViewById(R.id.addv_nickname);
         VehicleCode = findViewById(R.id.addv_securitycode);
-        vehicle_logo = findViewById(R.id.add_vehicle_image);
+        add_vehicles_constraint = findViewById(R.id.add_vehicle_parent_scrollview);
+//        vehicle_logo = findViewById(R.id.add_vehicle_image);
         vehicleNumber.setFilters(new InputFilter[]{new InputFilter.AllCaps()});
         cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+        progress_bar_layout_constraint = LayoutInflater.from(this).inflate(R.layout.progress_layout, null);
+
+        progressBarLayout = progress_bar_layout_constraint.findViewById(R.id.progressBarLayout);
+        constraintLayout = progress_bar_layout_constraint.findViewById(R.id.progress_layout_constraint_layout);
+
 
         previewView = findViewById(R.id.previewView);
         cameraShutter = findViewById(R.id.cameraShutter);
+        messageTextView = progress_bar_layout_constraint.findViewById(R.id.messageTextView);
+        progressBar = progress_bar_layout_constraint.findViewById(R.id.progressBar);
         overlay = findViewById(R.id.overlay_box);
         cameraShutter.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -179,7 +199,7 @@ public class AddVehicles extends AppCompatActivity {
             @Override
             public void onFocusChange(View view, boolean b) {
                 if (isValidCarNo(vehicleNumber.getText().toString())) {
-                    if(overlay.getDrawable()!=null){
+                    if (overlay.getDrawable() != null) {
                         add.setEnabled(true);
                     }
                 } else {
@@ -224,6 +244,9 @@ public class AddVehicles extends AppCompatActivity {
                 myRef.child(vehicle_number).setValue(data).addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void unused) {
+
+//                        findViewById(R.id.container_camera_preview_framelayout).setVisibility(View.GONE);
+
                         Toast.makeText(AddVehicles.this, "Vehicle Added Successfully", Toast.LENGTH_SHORT).show();
                         FirebaseMessaging.getInstance().subscribeToTopic(vehicle_number)
                                 .addOnCompleteListener(new OnCompleteListener<Void>() {
@@ -237,7 +260,7 @@ public class AddVehicles extends AppCompatActivity {
 //                                        Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
                                     }
                                 });
-                        finish();
+//                        finish();
                     }
                 }).addOnFailureListener(new OnFailureListener() {
                     @Override
@@ -252,7 +275,7 @@ public class AddVehicles extends AppCompatActivity {
 
                 StorageReference storageRef = storage.getReference();
                 StorageReference fileRef = storageRef.child("images/" + fileName);
-                File compressedImageFile=photoFile;
+                File compressedImageFile = photoFile;
                 try {
                     compressedImageFile = new Compressor(AddVehicles.this).compressToFile(photoFile);
                 } catch (IOException e) {
@@ -278,8 +301,14 @@ public class AddVehicles extends AppCompatActivity {
                                         }
                                 );
                                 Toast.makeText(AddVehicles.this, "Image sent to firebase", Toast.LENGTH_SHORT).show();
-                                Log.i("image-capture-firebase","image sent to firebase");
+                                Log.i("image-capture-firebase", "image sent to firebase");
                                 sendToServer();
+                                findViewById(R.id.overlay_label).setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View view) {
+                                        previewView.performClick();
+                                    }
+                                });
                                 // Perform further operations (e.g., save the URL to a database)
                             }
                         }).addOnFailureListener(new OnFailureListener() {
@@ -347,7 +376,7 @@ public class AddVehicles extends AppCompatActivity {
 //        });
 //    }
 
-    void sendToServer(){
+    void sendToServer() {
 
 
         // Create an instance of the API service interface
@@ -368,6 +397,7 @@ public class AddVehicles extends AppCompatActivity {
             @Override
             public void onResponse(Call<FileUploadResponse> call, Response<FileUploadResponse> response) {
                 if (response.isSuccessful()) {
+
                     // File upload successful
                     FileUploadResponse uploadResponse = response.body();
                     if (uploadResponse != null) {
@@ -376,17 +406,26 @@ public class AddVehicles extends AppCompatActivity {
                         // Perform actions based on the response
                         System.out.println("File upload successful");
                         System.out.println("File URL: " + fileUrl);
-                        System.out.println("Response: "+response.body());
+                        System.out.println("Response: ");
+                        System.out.println("Color:" + uploadResponse.getColor());
+                        System.out.println("Vehicle Number:" + uploadResponse.getVehicleNumber());
+                        System.out.println("isCar:" + uploadResponse.isCar());
                     }
+                    finish();
                 } else {
                     // File upload failed
+
                     System.out.println("File upload failed");
                 }
             }
 
             public void onFailure(Call<FileUploadResponse> call, Throwable t) {
                 try {
-                    throw t;
+
+                    findViewById(R.id.container_camera_preview_framelayout).setVisibility(View.VISIBLE);
+
+                    Toast.makeText(AddVehicles.this, "Vehicle Verification Failed!\nPlease try again with a better photo", Toast.LENGTH_SHORT).show();
+
                 } catch (Throwable e) {
                     e.printStackTrace();
                     throw new RuntimeException(e);
@@ -394,7 +433,8 @@ public class AddVehicles extends AppCompatActivity {
             }
         });
     }
-    void setOverlayInApp(){
+
+    void setOverlayInApp() {
         try {
             ExifInterface exifInterface = new ExifInterface(photoFile);
             int orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
@@ -414,7 +454,7 @@ public class AddVehicles extends AppCompatActivity {
 
             // Load the captured image into a Bitmap
             Bitmap bitmap = BitmapFactory.decodeFile(photoFile.getAbsolutePath());
-            int nh = (int) ( bitmap.getHeight() * (512.0 / bitmap.getWidth()) );
+            int nh = (int) (bitmap.getHeight() * (512.0 / bitmap.getWidth()));
 
 //            bitmap=Bitmap.createScaledBitmap(bitmap, 512, nh, true);
             bitmap = new Compressor(AddVehicles.this).compressToBitmap(photoFile);
@@ -441,6 +481,7 @@ public class AddVehicles extends AppCompatActivity {
         vehicleNumber.requestFocus();
 
     }
+
     void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
         oldLayoutView = findViewById(R.id.overlay_box);
         previewView.setImplementationMode(PreviewView.ImplementationMode.COMPATIBLE);
@@ -551,18 +592,20 @@ public class AddVehicles extends AppCompatActivity {
         }
         return file;
     }
+
     File photoFile;
     String fileName;
+
     private void captureImage() throws IOException {
         File outputDirectory = getOutputDirectory();
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
                 .format(System.currentTimeMillis());
 
-        photoFile= getAppSpecificAlbumStorageDir(this, timeStamp + ".jpg");
+        photoFile = getAppSpecificAlbumStorageDir(this, timeStamp + ".jpg");
         Log.d("Image-Path", photoFile.getAbsolutePath());
         ImageCapture.OutputFileOptions outputFileOptions =
                 new ImageCapture.OutputFileOptions.Builder(photoFile).build();
-        fileName= photoFile.getName();
+        fileName = photoFile.getName();
 
         imageCapture.takePicture(outputFileOptions, cameraExecutor, new ImageCapture.OnImageSavedCallback() {
             @Override

@@ -157,19 +157,19 @@
             app:layout_constraintTop_toBottomOf="@+id/card_vehicle_nick_name"
             app:layout_constraintVertical_bias="0.0" />
 
-        <Button
-            android:id="@+id/vehicle_edit_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:backgroundTint="@null"
-            android:background="#D27519"
-            android:text="Edit"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.057"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textView7"
-            app:layout_constraintVertical_bias="0.112" />
+<!--        <Button-->
+<!--            android:id="@+id/vehicle_edit_btn"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            app:backgroundTint="@null"-->
+<!--            android:background="#D27519"-->
+<!--            android:text="Edit"-->
+<!--            app:layout_constraintBottom_toBottomOf="parent"-->
+<!--            app:layout_constraintEnd_toEndOf="parent"-->
+<!--            app:layout_constraintHorizontal_bias="0.057"-->
+<!--            app:layout_constraintStart_toStartOf="parent"-->
+<!--            app:layout_constraintTop_toBottomOf="@+id/textView7"-->
+<!--            app:layout_constraintVertical_bias="0.112" />-->
 
         <Button
             android:id="@+id/vehicle_download_button"
@@ -181,7 +181,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.169"
-            app:layout_constraintStart_toEndOf="@+id/vehicle_edit_btn"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/card_vehicle_society"
             app:layout_constraintVertical_bias="0.109" />
 

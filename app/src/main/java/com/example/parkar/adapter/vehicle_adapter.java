@@ -91,20 +91,20 @@ public vehicle_adapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, 
             }
         });
 
-        holder.edit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-//                Toast.makeText(v.getContext(), "Vehicle ID"+model.getVehicle_number(), Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent(v.getContext(), EditVehicle.class);
-                intent.putExtra("vehicle_id", model.getVehicle_number());
-                v.getContext().startActivity(intent);
-            }
-        });
+//        holder.edit.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//
+////                Toast.makeText(v.getContext(), "Vehicle ID"+model.getVehicle_number(), Toast.LENGTH_SHORT).show();
+//                Intent intent = new Intent(v.getContext(), EditVehicle.class);
+//                intent.putExtra("vehicle_id", model.getVehicle_number());
+//                v.getContext().startActivity(intent);
+//            }
+//        });
         holder.download.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String url = "https://parkerapp.000webhostapp.com/verifyer.php?id="+model.getVehicle_number()+"&&uid="+model.getVehicle_owner_id();
+                String url = "http://192.168.201.170/Parkar/verifyer.php?id="+model.getVehicle_number()+"&uid="+model.getVehicle_owner_id();
                 Intent i = new Intent(Intent.ACTION_VIEW);
                 i.setData(Uri.parse(url));
                 v.getContext().startActivity(i);
@@ -134,7 +134,7 @@ public vehicle_adapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, 
             card_vehicle_nick_name = itemView.findViewById(R.id.card_vehicle_nick_name);
             card_vehicle_type = itemView.findViewById(R.id.card_vehicle_type);
 
-            edit = itemView.findViewById(R.id.vehicle_edit_btn);
+//            edit = itemView.findViewById(R.id.vehicle_edit_btn);
             download = itemView.findViewById(R.id.vehicle_download_button);
             delete = itemView.findViewById(R.id.vehicle_delete_btn);
 
